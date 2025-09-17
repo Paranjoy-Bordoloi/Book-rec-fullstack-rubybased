@@ -16,7 +16,7 @@ gem "stimulus-rails"
 gem "jbuilder"
 # Use Redis adapter to run Action Cable in production
 # gem "redis", ">= 4.0.1"
-gem "mongoid", "~> 8.0"
+gem "mongoid", "~> 9.0"
 gem 'fiddle'
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
