@@ -75,6 +75,9 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
+      - name: Ensure bin/rails is executable
+        run: chmod +x bin/rails
+
       - name: Run tests
         env:
           RAILS_ENV: test
