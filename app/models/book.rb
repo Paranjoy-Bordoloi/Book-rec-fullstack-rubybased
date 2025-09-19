@@ -7,4 +7,6 @@ class Book
   field :description, type: String
   field :cover_image_url, type: String
   field :genres, type: Array
+
+  index({ title: 'text', author: 'text', description: 'text' })
 end
