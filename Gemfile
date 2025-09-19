@@ -17,7 +17,7 @@ gem "jbuilder"
 gem "rack-cors"
 # Use Redis adapter to run Action Cable in production
 # gem "redis", ">= 4.0.1"
-gem "mongoid", "~> 8.0"
+gem "mongoid", "~> 9.0"
 gem 'fiddle'
 gem 'dotenv-rails', groups: [:development, :test]
 
