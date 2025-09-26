@@ -63,7 +63,9 @@ namespace :scraper do
           isbn: isbn,
           description: volume_info['description'],
           genres: volume_info['categories'],
-          cover_image_url: volume_info.dig('imageLinks', 'thumbnail')
+          cover_image_url: volume_info.dig('imageLinks', 'thumbnail'),
+          average_rating: volume_info['averageRating'],
+          ratings_count: volume_info['ratingsCount']
         )
         puts "Saved new book: '#{title}'"
       end

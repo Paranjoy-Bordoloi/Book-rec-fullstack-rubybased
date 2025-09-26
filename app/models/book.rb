@@ -7,6 +7,8 @@ class Book
   field :description, type: String
   field :cover_image_url, type: String
   field :genres, type: Array
+  field :average_rating, type: Float
+  field :ratings_count, type: Integer
 
   index({ title: 1 })
   index({ author: 1 })

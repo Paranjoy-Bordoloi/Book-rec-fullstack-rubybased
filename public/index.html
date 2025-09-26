@@ -11,12 +11,31 @@
         <h1>Bookwise</h1>
         <form id="search-form">
             <input type="search" id="search-input" placeholder="Search for books...">
+            <select id="genre-filter">
+                <option value="">All Genres</option>
+            </select>
+            <select id="rating-filter">
+                <option value="">All Ratings</option>
+                <option value="4">4+ stars</option>
+                <option value="3">3+ stars</option>
+                <option value="2">2+ stars</option>
+                <option value="1">1+ star</option>
+            </select>
+            <select id="sort-filter">
+                <option value="popularity">Popularity</option>
+                <option value="rating">Rating</option>
+                <option value="title">Title</option>
+            </select>
             <button type="submit">Search</button>
         </form>
     </header>
     <main>
         <div class="book-grid">
             <!-- Books will be loaded here by JavaScript -->
+        </div>
+        <div id="book-detail-view" class="hidden">
+            <!-- Detailed book view will be loaded here -->
+            <div id="similar-books-container"></div>
         </div>
     </main>
     <script src="scripts.js"></script>
