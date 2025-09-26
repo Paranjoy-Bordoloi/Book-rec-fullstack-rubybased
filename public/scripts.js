@@ -28,12 +28,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     const author = document.createElement('h3');
                     author.textContent = book.author;
 
+                    const genresContainer = document.createElement('div');
+                    genresContainer.classList.add('genres');
+
+                    if (book.genres && book.genres.length > 0) {
+                        book.genres.forEach(genre => {
+                            const genreTag = document.createElement('span');
+                            genreTag.classList.add('genre-tag');
+                            genreTag.textContent = genre;
+                            genresContainer.appendChild(genreTag);
+                        });
+                    }
+
                     const description = document.createElement('p');
                     description.textContent = book.description || 'No description available.';
 
                     bookCard.appendChild(coverImage);
                     bookCard.appendChild(title);
                     bookCard.appendChild(author);
+                    bookCard.appendChild(genresContainer);
                     bookCard.appendChild(description);
 
                     bookGrid.appendChild(bookCard);
@@ -53,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const query = searchInput.value.trim();
         if (query) {
-            fetchAndDisplayBooks(`http://localhost:3000/api/v1/search?query=${encodeURIComponent(query)}`);
+            fetchAndDisplayBooks(`http://localhost:3000/api/v1/books?query=${encodeURIComponent(query)}`);
         } else {
             // If search is empty, load all books
             fetchAndDisplayBooks('http://localhost:3000/api/v1/books');

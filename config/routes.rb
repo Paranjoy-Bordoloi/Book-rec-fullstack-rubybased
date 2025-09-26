@@ -2,8 +2,11 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       # This is the corrected line
-      resources :books, only: [:index, :show], defaults: { format: :json }
-      get '/search', to: 'books#search'
+      resources :books, only: [:index, :show], defaults: { format: :json } do
+        collection do
+          get :genres
+        end
+      end
     end
   end
 

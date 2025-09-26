@@ -64,3 +64,18 @@ main {
     color: #777;
     line-height: 1.4;
 }
+
+.genres {
+    margin-bottom: 1rem;
+}
+
+.genre-tag {
+    display: inline-block;
+    background-color: #eee;
+    color: #333;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}

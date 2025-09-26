@@ -8,5 +8,7 @@ class Book
   field :cover_image_url, type: String
   field :genres, type: Array
 
+  index({ title: 1 })
+  index({ author: 1 })
   index({ title: 'text', author: 'text', description: 'text' })
 end
