@@ -54,20 +54,23 @@ namespace :scraper do
         next
       end
 
-      if Book.where(isbn: isbn).exists?
-        puts "Book with ISBN #{isbn} already exists: '#{title}'"
-      else
-        Book.create(
-          title: title,
-          author: volume_info['authors']&.join(', '),
-          isbn: isbn,
-          description: volume_info['description'],
-          genres: volume_info['categories'],
-          cover_image_url: volume_info.dig('imageLinks', 'thumbnail'),
-          average_rating: volume_info['averageRating'],
-          ratings_count: volume_info['ratingsCount']
-        )
+      book = Book.find_or_initialize_by(isbn: isbn)
+      new_book = book.new_record?
+
+      book.update(
+        title: title,
+        author: volume_info['authors']&.join(', '),
+        description: volume_info['description'],
+        genres: volume_info['categories'],
+        cover_image_url: volume_info.dig('imageLinks', 'thumbnail'),
+        average_rating: volume_info['averageRating'],
+        ratings_count: volume_info['ratingsCount']
+      )
+
+      if new_book
         puts "Saved new book: '#{title}'"
+      else
+        puts "Updated book: '#{title}'"
       end
 
       # A short delay to be polite to the API

@@ -13,4 +13,10 @@ class Book
   index({ title: 1 })
   index({ author: 1 })
   index({ title: 'text', author: 'text', description: 'text' })
+
+  def as_json(options={})
+    super(options).merge({
+      id: self._id.to_s
+    })
+  end
 end

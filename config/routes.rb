@@ -6,9 +6,6 @@ Rails.application.routes.draw do
         member do
           get :similar
         end
-        collection do
-          get :genres
-        end
       end
     end
   end
