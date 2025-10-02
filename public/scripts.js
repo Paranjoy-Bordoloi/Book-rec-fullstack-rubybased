@@ -4,245 +4,173 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchForm = document.getElementById('search-form');
     const searchInput = document.getElementById('search-input');
     const genreFilter = document.getElementById('genre-filter');
-    const ratingFilter = document.getElementById('rating-filter');
-    const sortFilter = document.getElementById('sort-filter');
-    let allBooks = []; // This will be used to store books from search/filter results
 
-    const getStarRating = (rating) => {
-        if (!rating) return '';
-        const fullStars = Math.floor(rating);
-        const halfStar = rating % 1 >= 0.5 ? 1 : 0;
-        const emptyStars = 5 - fullStars - halfStar;
-        return `
-            <div class="star-rating">
-                ${ '&#9733;'.repeat(fullStars) }
-                ${ halfStar ? '&#9734;' : '' } 
-                ${ '&#9734;'.repeat(emptyStars) }
-                <span class="rating-text">(${rating.toFixed(1)})</span>
-            </div>
-        `;
+    // --- Helper Functions ---
+    const getBookId = (book) => (book?._id?.$oid || book?.id || null);
+
+    const showView = (view) => {
+        bookGrid.style.display = 'none';
+        bookDetailView.style.display = 'none';
+        if (view === 'grid') {
+            bookGrid.style.display = 'block';
+        } else if (view === 'detail') {
+            bookDetailView.style.display = 'block';
+        }
     };
 
-    const getBookId = (book) => {
-        if (!book) return null;
-        if (book._id && book._id.$oid) return book._id.$oid;
-        if (book.id) return book.id;
-        return null;
-    }
+    // --- API Fetching ---
+    const apiFetch = (url) => fetch(url).then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+    }).catch(e => console.error("API Fetch Error:", e));
 
-    const displaySimilarBooks = (books) => {
-        const container = document.getElementById('similar-books-container');
-        if (!container || books.length === 0) {
-            if (container) container.innerHTML = '';
-            return;
+    // --- Rendering ---
+    const renderBookDetail = (book) => {
+        if (!book) return;
+        
+        const coverImage = book.cover_image_url || 'https://via.placeholder.com/300x450.png?text=No+Image';
+        const description = book.description || 'No description available.';
+        const genres = book.genres?.map(g => `<span class="genre-tag">${g}</span>`).join('') || '';
+
+        bookDetailView.innerHTML = `
+            <button id="back-to-grid" class="btn btn-outline-secondary mb-3">&#8592; Back to list</button>
+            <div class="book-detail-content">
+                <img src="${coverImage}" alt="Cover of ${book.title}">
+                <div class="book-info">
+                    <h2 class="mb-2">${book.title}</h2>
+                    <h3 class="text-muted h5 mb-3">by ${book.author || 'Unknown Author'}</h3>
+                    <div class="genres mb-3">${genres}</div>
+                    <p>${description}</p>
+                </div>
+            </div>
+            <div id="similar-books-container"></div>
+        `;
+        showView('detail');
+        
+        const bookId = getBookId(book);
+        if (bookId) {
+            apiFetch(`/api/v1/books/${bookId}/similar`).then(renderSimilarBooks);
         }
+    };
 
-        const similarBooksHTML = books.map(book => {
-            const bookId = getBookId(book);
-            return `
-            <div class="similar-book-card" data-book-id="${bookId}">
+    const renderSimilarBooks = (books) => {
+        const container = document.getElementById('similar-books-container');
+        if (!container || !books || books.length === 0) return;
+
+        const similarBooksHTML = books.map(book => `
+            <div class="similar-book-card" data-book-id="${getBookId(book)}">
                 <img src="${book.cover_image_url || 'https://via.placeholder.com/100x150.png?text=No+Image'}" alt="Cover of ${book.title}">
                 <h4>${book.title}</h4>
             </div>
-        `}).join('');
+        `).join('');
 
         container.innerHTML = `
-            <h3>Readers Also Liked</h3>
-            <div class="similar-books-grid">
-                ${similarBooksHTML}
-            </div>
+            <h3 class="mt-5">Readers Also Liked</h3>
+            <div class="similar-books-grid">${similarBooksHTML}</div>
         `;
-
-        container.querySelectorAll('.similar-book-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const bookId = card.dataset.bookId;
-                if (bookId && bookId !== 'null' && bookId !== 'undefined') {
-                    fetch(`http://localhost:3000/api/v1/books/${bookId}`)
-                        .then(res => res.json())
-                        .then(bookData => showBookDetail(bookData));
-                }
-            });
-        });
     };
 
-    const showBookDetail = (book) => {
-        if (!book) return;
-        bookGrid.classList.add('hidden');
-        searchForm.classList.add('hidden');
-        bookDetailView.classList.remove('hidden');
-
-        bookDetailView.innerHTML = `
-            <button id="back-to-grid">&#8592; Back to list</button>
-            <h2>${book.title}</h2>
-            <h3>by ${book.author}</h3>
-            ${getStarRating(book.average_rating)}
-            <img src="${book.cover_image_url || 'https://via.placeholder.com/250x375.png?text=No+Image'}" alt="Cover of ${book.title}">
-            <div class="genres">
-                ${book.genres && book.genres.length > 0 ? book.genres.map(genre => `<span class="genre-tag">${genre}</span>`).join('') : ''}
-            </div>
-            <p>${book.description || 'No description available.'}</p>
-            <div id="similar-books-container"></div>
-        `;
-
-        document.getElementById('back-to-grid').addEventListener('click', () => {
-            bookDetailView.classList.add('hidden');
-            bookGrid.classList.remove('hidden');
-            searchForm.classList.remove('hidden');
-        });
-
-        const bookId = getBookId(book);
-        if (bookId) {
-            fetch(`http://localhost:3000/api/v1/books/${bookId}/similar`)
-                .then(response => response.json())
-                .then(similarBooks => displaySimilarBooks(similarBooks));
-        } else {
-            const container = document.getElementById('similar-books-container');
-            if (container) container.innerHTML = '';
-        }
-    };
-
-    const populateGenreFilter = (genres) => {
-        genreFilter.innerHTML = '<option value="">All Genres</option>'; // Clear existing options
-        genres.forEach(genre => {
-            if (genre) {
-                const option = document.createElement('option');
-                option.value = genre;
-                option.textContent = genre;
-                genreFilter.appendChild(option);
-            }
-        });
-    };
-
-    const renderHomepageFeed = (feed) => {
+    const renderHomepageFeed = (data) => {
         bookGrid.innerHTML = '';
-        bookGrid.classList.remove('is-search-results');
+        if (!data || !data.feed) return;
 
-        const genres = Object.keys(feed);
-        populateGenreFilter(genres);
-
-        for (const genre in feed) {
-            const books = feed[genre];
+        for (const [genre, books] of Object.entries(data.feed)) {
             if (books.length > 0) {
-                const genreSection = document.createElement('section');
-                genreSection.classList.add('genre-section');
-
-                const booksHTML = books.map(book => {
-                    const bookId = getBookId(book);
-                    return `
-                    <div class="book-card-small" data-book-id="${bookId}">
-                        <img src="${book.cover_image_url || 'https://via.placeholder.com/120x180.png?text=No+Image'}" alt="Cover of ${book.title}">
-                        <h4>${book.title}</h4>
+                const booksHTML = books.map(book => `
+                    <div class="book-card" data-book-id="${getBookId(book)}">
+                        <img src="${book.cover_image_url || 'https://via.placeholder.com/150x225.png?text=No+Image'}" alt="Cover of ${book.title}">
+                         <div class="book-card-info">
+                            <h4>${book.title}</h4>
+                            <p>${book.author || 'Unknown Author'}</p>
+                        </div>
                     </div>
-                `}).join('');
+                `).join('');
 
-                genreSection.innerHTML = `
-                    <h2>${genre}</h2>
-                    <div class="books-carousel">
-                        ${booksHTML}
-                    </div>
+                bookGrid.innerHTML += `
+                    <section class="genre-section">
+                        <h2>${genre}</h2>
+                        <div class="books-carousel">${booksHTML}</div>
+                    </section>
                 `;
-                bookGrid.appendChild(genreSection);
             }
         }
-
-        bookGrid.querySelectorAll('.book-card-small').forEach(card => {
-            card.addEventListener('click', () => {
-                const bookId = card.dataset.bookId;
-                if (bookId && bookId !== 'null' && bookId !== 'undefined') {
-                    fetch(`http://localhost:3000/api/v1/books/${bookId}`)
-                        .then(res => res.json())
-                        .then(bookData => showBookDetail(bookData));
-                }
-            });
-        });
+        showView('grid');
     };
 
-    const displaySearchResults = (books) => {
-        allBooks = books;
+    const renderSearchResults = (books) => {
         bookGrid.innerHTML = '';
-        bookGrid.classList.add('is-search-results');
-
-        if (books.length === 0) {
-            bookGrid.innerHTML = '<p>No books found.</p>';
+        if (!books || books.length === 0) {
+            bookGrid.innerHTML = '<p class="text-center">No books found.</p>';
+            showView('grid');
             return;
         }
 
-        books.forEach((book, index) => {
-            const bookCard = document.createElement('div');
-            bookCard.classList.add('book-card');
-            bookCard.dataset.index = index;
+        const booksHTML = books.map(book => `
+            <div class="book-card" data-book-id="${getBookId(book)}">
+                <img src="${book.cover_image_url || 'https://via.placeholder.com/200x300.png?text=No+Image'}" alt="Cover of ${book.title}">
+                <div class="book-card-info">
+                    <h4>${book.title}</h4>
+                    <p>${book.author || 'Unknown Author'}</p>
+                </div>
+            </div>
+        `).join('');
+        
+        bookGrid.innerHTML = `<div class="search-results-grid">${booksHTML}</div>`;
+        showView('grid');
+    };
 
-            const coverImage = document.createElement('img');
-            coverImage.src = book.cover_image_url || 'https://via.placeholder.com/250x375.png?text=No+Image';
-            coverImage.alt = `Cover of ${book.title}`;
-
-            const title = document.createElement('h2');
-            title.textContent = book.title;
-
-            const author = document.createElement('h3');
-            author.textContent = book.author;
-
-            const rating = document.createElement('div');
-            rating.innerHTML = getStarRating(book.average_rating);
-
-            bookCard.appendChild(coverImage);
-            bookCard.appendChild(title);
-            bookCard.appendChild(author);
-            bookCard.appendChild(rating);
-
-            bookGrid.appendChild(bookCard);
+    const populateGenreFilter = (genres) => {
+        genreFilter.innerHTML = '<option value="">All Genres</option>';
+        genres.forEach(genre => {
+            if (genre) {
+                genreFilter.innerHTML += `<option value="${genre}">${genre}</option>`;
+            }
         });
     };
 
-    const fetchData = (url) => {
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                if (data.is_homepage_feed) {
-                    renderHomepageFeed(data.feed);
-                } else {
-                    displaySearchResults(data);
-                }
-            })
-            .catch(error => console.error('Error fetching data:', error));
-    };
-
+    // --- Event Listeners ---
     bookGrid.addEventListener('click', (e) => {
-        const card = e.target.closest('.book-card'); // Only for search results grid
-        if (card) {
-            const bookIndex = card.dataset.index;
-            if (bookIndex) {
-                showBookDetail(allBooks[bookIndex]);
-            }
+        const card = e.target.closest('.book-card');
+        if (card?.dataset.bookId) {
+            apiFetch(`/api/v1/books/${card.dataset.bookId}`).then(renderBookDetail);
+        }
+    });
+
+    bookDetailView.addEventListener('click', (e) => {
+        if (e.target.id === 'back-to-grid') {
+            showView('grid');
+        }
+        const card = e.target.closest('.similar-book-card');
+        if (card?.dataset.bookId) {
+            apiFetch(`/api/v1/books/${card.dataset.bookId}`).then(renderBookDetail);
         }
     });
 
     searchForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        bookDetailView.classList.add('hidden');
-        bookGrid.classList.remove('hidden');
-        searchForm.classList.remove('hidden');
-
         const query = searchInput.value.trim();
         const genre = genreFilter.value;
-        const rating = ratingFilter.value;
-        const sort = sortFilter.value;
-
-        let url = 'http://localhost:3000/api/v1/books?';
-        const params = [];
-        if (query) params.push(`query=${encodeURIComponent(query)}`);
-        if (genre) params.push(`genre=${encodeURIComponent(genre)}`);
-        if (rating) params.push(`rating=${encodeURIComponent(rating)}`);
-        if (sort) params.push(`sort=${encodeURIComponent(sort)}`);
-        url += params.join('&');
         
-        fetchData(url);
+        const params = new URLSearchParams();
+        if (query) params.set('query', query);
+        if (genre) params.set('genre', genre);
+
+        // If search is empty, load homepage, otherwise search
+        if (!query && !genre) {
+            apiFetch('/api/v1/homepage_feed').then(renderHomepageFeed);
+        } else {
+            apiFetch(`/api/v1/search?${params.toString()}`).then(renderSearchResults);
+        }
     });
-
+    
     genreFilter.addEventListener('change', () => searchForm.dispatchEvent(new Event('submit')));
-    ratingFilter.addEventListener('change', () => searchForm.dispatchEvent(new Event('submit')));
-    sortFilter.addEventListener('change', () => searchForm.dispatchEvent(new Event('submit')));
 
-    // Initial load
-    fetchData('http://localhost:3000/api/v1/books');
+    // --- Initial Load ---
+    const init = () => {
+        apiFetch('/api/v1/homepage_feed').then(renderHomepageFeed);
+        apiFetch('/api/v1/genres').then(populateGenreFilter);
+        showView('grid');
+    };
+
+    init();
 });

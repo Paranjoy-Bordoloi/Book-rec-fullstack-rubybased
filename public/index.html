@@ -4,40 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bookwise</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <h1>Bookwise</h1>
-        <form id="search-form">
-            <input type="search" id="search-input" placeholder="Search for books...">
-            <select id="genre-filter">
-                <option value="">All Genres</option>
-            </select>
-            <select id="rating-filter">
-                <option value="">All Ratings</option>
-                <option value="4">4+ stars</option>
-                <option value="3">3+ stars</option>
-                <option value="2">2+ stars</option>
-                <option value="1">1+ star</option>
-            </select>
-            <select id="sort-filter">
-                <option value="popularity">Popularity</option>
-                <option value="rating">Rating</option>
-                <option value="title">Title</option>
-            </select>
-            <button type="submit">Search</button>
-        </form>
+    <header class="bg-light border-bottom p-3 mb-4">
+        <div class="container-fluid">
+            <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+                <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-dark text-decoration-none fs-4 me-4">
+                    <strong>Bookwise</strong>
+                </a>
+
+                <form id="search-form" class="w-100 me-lg-auto">
+                    <div class="input-group">
+                        <input type="search" id="search-input" class="form-control" placeholder="Search for books...">
+                        <select id="genre-filter" class="form-select" style="max-width: 150px;">
+                            <option value="">All Genres</option>
+                        </select>
+                        <button class="btn btn-primary" type="submit">Search</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </header>
-    <main>
-        <div class="book-grid">
-            <!-- Books will be loaded here by JavaScript -->
-        </div>
-        <div id="book-detail-view" class="hidden">
-            <!-- Detailed book view will be loaded here -->
-            <div id="similar-books-container"></div>
-        </div>
+
+    <main class="container-fluid">
+        <div class="book-grid"></div>
+        <div id="book-detail-view" style="display: none;"></div>
     </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="scripts.js"></script>
 </body>
 </html>

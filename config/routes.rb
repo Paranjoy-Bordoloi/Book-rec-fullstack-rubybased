@@ -1,12 +1,14 @@
 Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
-      # This is the corrected line
       resources :books, only: [:index, :show], defaults: { format: :json } do
         member do
           get :similar
         end
       end
+      get 'genres', to: 'books#genres'
+      get 'homepage_feed', to: 'books#homepage_feed'
+      get 'search', to: 'books#search'
     end
   end
 

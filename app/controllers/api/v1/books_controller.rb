@@ -1,20 +1,17 @@
 class Api::V1::BooksController < ActionController::API
   def index
-    # If no search, filter, or sort params are present, return the homepage feed.
-    if params[:query].blank? && params[:genre].blank? && params[:rating].blank? && params[:sort].blank?
-      render_homepage_feed
-    else
-      render_search_results
-    end
+    render_homepage_feed
   end
 
   def show
+    return head :not_found if params[:id] == 'undefined'
     @book = Book.find(params[:id])
     render json: @book
   end
 
 
   def similar
+    return head :not_found if params[:id] == 'undefined'
     @book = Book.find(params[:id])
     if @book.genres.present?
       @similar_books = Book.where(genres: @book.genres.first, :id.ne => @book.id).limit(5)
@@ -22,6 +19,18 @@ class Api::V1::BooksController < ActionController::API
       @similar_books = []
     end
     render json: @similar_books
+  end
+
+  def genres
+    render json: Book.pluck(:genres).flatten.compact.uniq.sort
+  end
+
+  def homepage_feed
+    render_homepage_feed
+  end
+
+  def search
+    render_search_results
   end
 
   private
