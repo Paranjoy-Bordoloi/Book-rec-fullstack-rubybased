@@ -76,25 +76,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (const [genre, books] of Object.entries(data.feed)) {
             if (books.length > 0) {
-                const booksHTML = books.map(book => `
-                    <div class="book-card" data-book-id="${getBookId(book)}">
-                        <img src="${book.cover_image_url || 'https://via.placeholder.com/150x225.png?text=No+Image'}" alt="Cover of ${book.title}">
-                         <div class="book-card-info">
-                            <h4>${book.title}</h4>
-                            <p>${book.author || 'Unknown Author'}</p>
+                const slidesHTML = books.map(book => `
+                    <li class="splide__slide">
+                        <div class="book-card" data-book-id="${getBookId(book)}">
+                            <img src="${book.cover_image_url || 'https://via.placeholder.com/150x225.png?text=No+Image'}" alt="Cover of ${book.title}">
+                            <div class="book-card-info">
+                                <h4>${book.title}</h4>
+                                <p>${book.author || 'Unknown Author'}</p>
+                            </div>
                         </div>
-                    </div>
+                    </li>
                 `).join('');
 
                 bookGrid.innerHTML += `
                     <section class="genre-section">
                         <h2>${genre}</h2>
-                        <div class="books-carousel">${booksHTML}</div>
+                        <div class="splide">
+                            <div class="splide__track">
+                                <ul class="splide__list">
+                                    ${slidesHTML}
+                                </ul>
+                            </div>
+                        </div>
                     </section>
                 `;
             }
         }
         showView('grid');
+        initSliders();
+    };
+
+    const initSliders = () => {
+        document.querySelectorAll('.splide').forEach(splideElement => {
+            new Splide(splideElement, {
+                perPage: 6,
+                perMove: 2,
+                gap: '1rem',
+                pagination: false,
+                breakpoints: {
+                    1200: { perPage: 5 },
+                    992: { perPage: 4 },
+                    768: { perPage: 3 },
+                    576: { perPage: 2 },
+                }
+            }).mount();
+        });
     };
 
     const renderSearchResults = (books) => {
@@ -155,7 +181,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (query) params.set('query', query);
         if (genre) params.set('genre', genre);
 
-        // If search is empty, load homepage, otherwise search
         if (!query && !genre) {
             apiFetch('/api/v1/homepage_feed').then(renderHomepageFeed);
         } else {

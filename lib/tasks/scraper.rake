@@ -1,82 +1,97 @@
-require 'httparty'
-require 'uri'
+require 'securerandom'
 
 namespace :scraper do
-  desc "Fetches books from Google Books API and saves them to the database. Pass a search query in brackets, e.g., rake 'scraper:fetch_books_from_google[Ruby on Rails]'"
-  task :fetch_books_from_google, [:query] => :environment do |t, args|
+  # Helper method to search Open Library for an ISBN
+  def find_isbn_on_open_library(title)
+    puts "    -> Title missing ISBN. Searching Open Library for '#{title}'..."
+    search_url = "https://openlibrary.org/search.json?q=#{URI.encode_www_form_component(title)}"
+    response = HTTParty.get(search_url, headers: { 'User-Agent' => 'Gemini-CLI-Agent/1.0' })
+    return nil unless response.success?
+
+    docs = response.parsed_response['docs']
+    return nil if docs.nil? || docs.empty?
+
+    # Find the first document that has an isbn
+    first_doc_with_isbn = docs.find { |doc| doc['isbn']&.first }
+    return nil unless first_doc_with_isbn
+
+    isbn = first_doc_with_isbn['isbn'].first
+    puts "    -> Found ISBN on Open Library: #{isbn}"
+    isbn
+  end
+
+  desc "Fetches books from Google Books API. Usage: rails scraper:google_books_search[query,max_results]"
+  task :google_books_search, [:query, :max_results] => :environment do |t, args|
     api_key = ENV['GOOGLE_BOOKS_API_KEY']
     unless api_key
-      puts "GOOGLE_BOOKS_API_KEY environment variable not set. Please set it to your Google Books API key."
-      puts "For local development, you can use the 'dotenv-rails' gem and a .env file."
+      puts "GOOGLE_BOOKS_API_KEY environment variable not set."
       next
     end
 
-    query = args[:query] || 'programming' # Default query if none is provided
-    puts "Fetching books for query: '#{query}' from Google Books API..."
+    query = args[:query] || 'programming'
+    max_results = (args[:max_results] || 40).to_i
+    per_page = 40 # Max allowed by API
+    start_index = 0
+    books_found = 0
 
-    # Google Books API endpoint for searching volumes
-    search_url = "https://www.googleapis.com/books/v1/volumes?q=#{URI.encode_www_form_component(query)}&key=#{api_key}&maxResults=20"
+    puts "Fetching up to #{max_results} books for query: '#{query}'..."
 
-    response = HTTParty.get(search_url, headers: { 'User-Agent' => 'Gemini-CLI-Agent/1.0' })
+    while books_found < max_results
+      remaining = max_results - books_found
+      current_max = [remaining, per_page].min
 
-    unless response.success?
-      puts "Failed to fetch data from Google Books API, status code: #{response.code}"
-      puts "Response body: #{response.body}"
-      next
-    end
+      search_url = "https://www.googleapis.com/books/v1/volumes?q=#{URI.encode_www_form_component(query)}&key=#{api_key}&maxResults=#{current_max}&startIndex=#{start_index}"
+      
+      puts "Fetching from index #{start_index}..."
+      response = HTTParty.get(search_url, headers: { 'User-Agent' => 'Gemini-CLI-Agent/1.0' })
 
-    items = response.parsed_response['items']
-    if items.nil? || items.empty?
-      puts "No books found for the query: '#{query}'"
-      next
-    end
-
-    puts "Found #{items.count} books. Processing..."
-
-    items.each do |item|
-      volume_info = item['volumeInfo']
-      next unless volume_info
-
-      # Extract ISBN-13 if available, otherwise ISBN-10
-      isbn = nil
-      if volume_info['industryIdentifiers']
-        isbn_13 = volume_info['industryIdentifiers'].find { |id| id['type'] == 'ISBN_13' }
-        isbn_10 = volume_info['industryIdentifiers'].find { |id| id['type'] == 'ISBN_10' }
-        isbn = isbn_13['identifier'] if isbn_13
-        isbn ||= isbn_10['identifier'] if isbn_10
+      unless response.success?
+        puts "Failed to fetch data, status: #{response.code}. Body: #{response.body}"
+        break
       end
 
-      title = volume_info['title']
-
-      # Skip if essential information is missing
-      if title.blank? || isbn.blank?
-        puts "Skipping item due to missing title or ISBN. Title: #{title.inspect}, ISBN: #{isbn.inspect}"
-        next
+      items = response.parsed_response['items']
+      if items.nil? || items.empty?
+        puts "No more books found for the query."
+        break
       end
 
-      book = Book.find_or_initialize_by(isbn: isbn)
-      new_book = book.new_record?
+      items.each do |item|
+        volume_info = item['volumeInfo']
+        next unless volume_info
 
-      book.update(
-        title: title,
-        author: volume_info['authors']&.join(', '),
-        description: volume_info['description'],
-        genres: volume_info['categories'],
-        cover_image_url: volume_info.dig('imageLinks', 'thumbnail'),
-        average_rating: volume_info['averageRating'],
-        ratings_count: volume_info['ratingsCount']
-      )
+        title = volume_info['title']
+        next if title.blank?
 
-      if new_book
-        puts "Saved new book: '#{title}'"
-      else
-        puts "Updated book: '#{title}'"
-      end
+        isbn = nil
+        if volume_info['industryIdentifiers']
+          isbn_13 = volume_info['industryIdentifiers'].find { |id| id['type'] == 'ISBN_13' }
+          isbn_10 = volume_info['industryIdentifiers'].find { |id| id['type'] == 'ISBN_10' }
+          isbn = isbn_13['identifier'] if isbn_13
+          isbn ||= isbn_10['identifier'] if isbn_10
+        end
 
-      # A short delay to be polite to the API
-      sleep(0.5)
-    end
+        # If ISBN is missing, try to find it on Open Library
+        if isbn.blank?
+          isbn = find_isbn_on_open_library(title)
+        end
 
-    puts "Finished processing books."
-  end
-end
+        # If ISBN is still missing, generate a unique placeholder
+        if isbn.blank?
+          placeholder = "NOISBN_#{title.parameterize}_#{SecureRandom.hex(4)}"
+          puts "    -> Could not find ISBN. Generating placeholder: #{placeholder}"
+          isbn = placeholder
+        end
+
+        book = Book.find_or_initialize_by(isbn: isbn)
+        new_book = book.new_record?
+
+        # Don't overwrite existing data with nil from the new API call
+        book.title ||= title
+        book.author ||= volume_info['authors']&.join(', ')
+        book.description ||= volume_info['description']
+        book.genres ||= volume_info['categories']
+        book.cover_image_url ||= volume_info.dig('imageLinks', 'thumbnail')
+        book.average_rating ||= volume_info['averageRating']
+        book.ratings_count ||= volume_info['ratingsCount']
+        book.save
