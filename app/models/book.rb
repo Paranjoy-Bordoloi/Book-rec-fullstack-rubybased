@@ -9,9 +9,11 @@ class Book
   field :genres, type: Array
   field :average_rating, type: Float
   field :ratings_count, type: Integer
+  field :tags, type: Array
 
   index({ title: 1 })
   index({ author: 1 })
+  index({ tags: 1 })
   index({ title: 'text', author: 'text', description: 'text' })
 
   def as_json(options={})

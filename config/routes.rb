@@ -4,11 +4,14 @@ Rails.application.routes.draw do
       resources :books, only: [:index, :show], defaults: { format: :json } do
         member do
           get :similar
+          post :generate_tags
         end
       end
       get 'genres', to: 'books#genres'
       get 'homepage_feed', to: 'books#homepage_feed'
       get 'search', to: 'books#search'
+      get 'all_tags', to: 'books#all_tags'
+      get 'tags/:tag', to: 'books#search_by_tag', as: :search_by_tag
     end
   end
 
