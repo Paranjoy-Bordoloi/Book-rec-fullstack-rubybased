@@ -178,7 +178,7 @@ GEM
     psych (5.2.6)
       date
       stringio
-    puma (6.6.1)
+    puma (7.0.4)
       nio4r (~> 2.0)
     racc (1.8.1)
     rack (3.2.1)
@@ -288,7 +288,7 @@ DEPENDENCIES
   mongoid-rspec (~> 4.0)
   nokogiri
   propshaft
-  puma (~> 6.4)
+  puma (~> 7.0)
   rack-cors
   rails (~> 8.0.2, >= 8.0.2.1)
   rspec-rails (~> 6.1)
