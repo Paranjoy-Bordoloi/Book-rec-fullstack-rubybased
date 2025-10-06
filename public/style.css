@@ -90,6 +90,14 @@ main.is-transitioning {
     margin-bottom: 0;
 }
 
+/* Navbar tweaks for MPA */
+.navbar-brand { font-weight: 700; color: var(--primary-color) !important; }
+.navbar .form-control { min-width: 220px; }
+.navbar .form-select { min-width: 140px; }
+
+/* Card subtle gradient */
+.card.h-100 { background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%); }
+
 /* --- Splide Slider --- */
 .splide__arrow {
     background: var(--white-color);
@@ -103,9 +111,24 @@ main.is-transitioning {
 /* --- Search Grid --- */
 .search-results-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1.25rem;
 }
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .book-card img { height: 200px; }
+    .genre-section h2 { font-size: 1.25rem; }
+}
+
+/* Modal slider tweaks */
+.reading-list-splide .book-card { opacity: 1; }
+.reading-list-splide .book-card img { height: 220px; }
+.splide__arrow { opacity: 0.95; transition: opacity 0.2s ease; }
+.splide__arrow:hover { opacity: 1; }
+
+/* Smooth appearance for grid cards after JS animation */
+.book-card[style] { will-change: transform, opacity; }
 
 /* --- Detail View --- */
 #book-detail-view {

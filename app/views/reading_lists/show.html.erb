@@ -1,0 +1,27 @@
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3"><%= @reading_list.name %></h1>
+    <a href="<%= reading_lists_path %>" class="btn btn-outline-secondary">Back to Lists</a>
+  </div>
+
+  <% if @reading_list.books.any? %>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+      <% @reading_list.books.each do |book| %>
+        <div class="col">
+          <div class="card h-100 shadow-sm">
+            <img src="<%= book.cover_image_url.presence || '/icon.png' %>" class="card-img-top" style="object-fit:cover; height:220px;" alt="cover">
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title"><%= book.title %></h5>
+              <p class="card-text text-muted"><%= book.author %></p>
+              <div class="mt-auto">
+                <a href="/books/<%= book.id %>" class="btn btn-outline-primary btn-sm">Open</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="text-muted">This reading list has no books yet.</p>
+  <% end %>
+</div>

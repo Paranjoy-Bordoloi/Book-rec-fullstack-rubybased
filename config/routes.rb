@@ -1,4 +1,10 @@
 Rails.application.routes.draw do
+  # Return 204 for any requests under /.well-known to silence browser probes (Chrome DevTools, PWAs)
+  match '/.well-known/*path', to: proc { |_env| [204, { 'Content-Type' => 'text/plain' }, ['']] }, via: :all
+
+  # Web (MPA) reading lists - public views
+  resources :reading_lists, only: [:index, :show]
+
   namespace :api do
     namespace :v1 do
       post "authentication/login", to: "authentication#login"

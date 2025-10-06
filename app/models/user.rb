@@ -10,4 +10,7 @@ class User
   has_secure_password
 
   validates :email, presence: true, uniqueness: true
+  
+  # A user can have many reading lists
+  has_many :reading_lists
 end

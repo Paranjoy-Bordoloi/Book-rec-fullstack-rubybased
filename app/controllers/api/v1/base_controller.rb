@@ -2,6 +2,7 @@ class Api::V1::BaseController < ActionController::API
   include JsonWebToken
 
   before_action :authenticate_request
+  before_action :disable_response_caching
 
   private
 
@@ -16,5 +17,12 @@ class Api::V1::BaseController < ActionController::API
     rescue JWT::DecodeError => e
       render json: { errors: e.message }, status: :unauthorized
     end
+  end
+
+  def disable_response_caching
+    # Ensure API responses are not cached by browsers or intermediate proxies
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
   end
 end

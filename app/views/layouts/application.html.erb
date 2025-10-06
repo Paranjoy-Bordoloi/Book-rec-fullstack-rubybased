@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title><%= content_for(:title) || "My App" %></title>
+    <title><%= content_for(:title) || "Bookwise" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
@@ -10,19 +10,145 @@
 
     <%= yield :head %>
 
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
-
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
+    <!-- Core app css (Propshaft/Asset pipeline) -->
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <!-- Public styles (keeps original theme) -->
+    <link rel="stylesheet" href="/style.css">
+
+    <!-- Importmap + Stimulus controllers -->
     <%= javascript_importmap_tags %>
+    <!-- External libs used by public/scripts.js (Splide, Anime, Bootstrap) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
   </head>
 
   <body>
-    <%= yield %>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom mb-4">
+      <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center" href="/"><strong>Bookwise</strong></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="mainNavbar">
+          <form id="search-form" class="d-flex ms-3 me-auto">
+            <input class="form-control me-2" type="search" id="search-input" placeholder="Search books, authors..." aria-label="Search">
+            <select id="genre-filter" class="form-select me-2" style="max-width: 160px;"><option value="">All Genres</option></select>
+            <button class="btn btn-primary" type="submit">Search</button>
+          </form>
+
+          <form id="tag-search-form" class="d-flex me-3">
+            <input class="form-control" list="tag-suggestions" id="tag-search-input" placeholder="Search by mood or tag...">
+            <datalist id="tag-suggestions"></datalist>
+          </form>
+
+          <div class="d-flex align-items-center">
+            <div id="reading-lists-container" class="me-3"></div>
+            <div id="user-actions">
+              <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#login-modal">Login</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Dev debug panel: shows latest reading lists payload (helps during development) -->
+    <div id="dev-debug-panel" style="position: fixed; left: 20px; bottom: 80px; max-width: 360px; z-index: 2000; background: rgba(0,0,0,0.7); color: #fff; padding: 10px; border-radius: 6px; font-size: 12px; display: none;">
+      <div style="font-weight:600; margin-bottom:6px;">Dev Debug</div>
+      <pre id="reading-lists-debug" style="white-space: pre-wrap; word-break:break-word; max-height: 240px; overflow:auto; margin:0"></pre>
+    </div>
+
+    <main class="container-fluid">
+      <div class="book-grid"></div>
+      <div id="book-detail-view" style="display: none;"></div>
+      <%= yield %>
+    </main>
+
+    <!-- Login / Register Modal -->
+    <div class="modal fade" id="login-modal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Login or Register</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <ul class="nav nav-pills nav-fill mb-3">
+              <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#login-form-container">Login</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#register-form-container">Register</a>
+              </li>
+            </ul>
+            <div class="tab-content">
+              <div class="tab-pane fade show active" id="login-form-container">
+                <form id="login-form">
+                  <div class="mb-3">
+                    <label for="login-email" class="form-label">Email address</label>
+                    <input type="email" class="form-control" id="login-email" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="login-password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="login-password" required>
+                  </div>
+                  <div id="login-error" class="alert alert-danger" style="display: none;"></div>
+                  <button type="submit" class="btn btn-primary">Login</button>
+                </form>
+              </div>
+              <div class="tab-pane fade" id="register-form-container">
+                <form id="register-form">
+                  <div class="mb-3">
+                    <label for="register-name" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="register-name" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="register-email" class="form-label">Email address</label>
+                    <input type="email" class="form-control" id="register-email" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="register-password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="register-password" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="register-password-confirmation" class="form-label">Confirm Password</label>
+                    <input type="password" class="form-control" id="register-password-confirmation" required>
+                  </div>
+                  <button type="submit" class="btn btn-primary">Register</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reading list modal (rendered dynamically) -->
+    <div class="modal fade" id="reading-list-modal" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="reading-list-modal-title">Reading List</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body" id="reading-list-modal-body"></div>
+        </div>
+      </div>
+    </div>
+
+  <!-- Global error toast (used by client-side JS) -->
+  <div id="global-error-toast" role="alert" aria-live="assertive" aria-atomic="true" style="display:none; position: fixed; right: 20px; bottom: 20px; z-index: 2000; background: rgba(220,53,69,0.95); color: white; padding: 12px 16px; border-radius: 6px; box-shadow: 0 6px 18px rgba(0,0,0,0.12);"></div>
+
+    <!-- External JS at end of body -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="/scripts.js" defer></script>
   </body>
 </html>
