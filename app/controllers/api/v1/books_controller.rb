@@ -1,4 +1,6 @@
-class Api::V1::BooksController < ActionController::API
+class Api::V1::BooksController < Api::V1::BaseController
+  skip_before_action :authenticate_request, only: [:index, :show, :similar, :genres, :homepage_feed, :search, :all_tags, :search_by_tag]
+
   def index
     render_homepage_feed
   end
@@ -127,6 +129,12 @@ class Api::V1::BooksController < ActionController::API
   end
 
   def render_search_results
+    # Return an empty set if no query parameters are provided to avoid loading all books.
+    if params[:query].blank? && params[:genre].blank? && params[:rating].blank?
+      render json: []
+      return
+    end
+
     @books = Book.all
 
     if params[:query].present?
@@ -159,41 +167,15 @@ class Api::V1::BooksController < ActionController::API
       end
     end
 
+    # Paginate results using the kaminari gem.
+    # `page` comes from the request params, `per` sets the number of items per page.
+    @books = @books.page(params[:page]).per(25)
+
+    # Set pagination headers for the client
+    response.headers['X-Total'] = @books.total_count
+    response.headers['X-Per-Page'] = @books.limit_value
+    response.headers['X-Page'] = @books.current_page
+
     render json: @books
-  end
-
-  def all_tags
-    # Get all unique, non-nil tags, sorted alphabetically
-    tags = Book.distinct(:tags).compact.sort
-    render json: tags
-  end
-
-  def search_by_tag
-    @books = Book.where(tags: params[:tag])
-    render json: @books
-  end
-
-  def generate_tags
-    @book = Book.find(params[:id])
-    
-    # Initialize the AI client
-    # (Requires GOOGLE_API_KEY environment variable)
-    client = GenAI::Language.new(:google_palm2, ENV['GOOGLE_API_KEY'])
-    
-    # Create a prompt
-    prompt = "Based on the following book description, generate a list of 5 to 7 relevant tags or keywords. Return them as a simple comma-separated string. Do not include quotes or a preamble.\n\nDescription: #{@book.description}"
-    
-    # Call the AI
-    response = client.complete(prompt, temperature: 0.3, max_tokens: 50)
-    
-    # Process the result and update the book
-    if response.value
-      new_tags = response.value.split(',').map(&:strip)
-      @book.tags ||= []
-      @book.tags.concat(new_tags).uniq!
-      @book.save
-    end
-    
-    render json: @book
   end
 end

@@ -35,11 +35,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }, DURATION);
     };
 
+    // --- State ---
+    let currentUser = null;
+
     // --- API Fetching ---
-    const apiFetch = (url) => fetch(url).then(res => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
-    }).catch(e => console.error("API Fetch Error:", e));
+    const apiFetch = (url, options = {}) => {
+        const headers = { 'Content-Type': 'application/json', ...options.headers };
+        if (currentUser?.token) {
+            headers['Authorization'] = `Bearer ${currentUser.token}`;
+        }
+        return fetch(url, { ...options, headers }).then(res => {
+            if (!res.ok) {
+                return res.json().then(err => { throw new Error(err.error || `HTTP error! status: ${res.status}`) });
+            }
+            if (res.status === 204) return null; // No Content
+            return res.json();
+        }).catch(e => {
+            console.error("API Fetch Error:", e);
+            alert(`Error: ${e.message}`);
+            throw e;
+        });
+    };
+
+    const apiPost = (url, body) => apiFetch(url, {
+        method: 'POST',
+        body: JSON.stringify(body)
+    });
 
     // --- Rendering ---
     const renderBookDetail = (book) => {
@@ -152,6 +173,41 @@ document.addEventListener('DOMContentLoaded', () => {
         tags.forEach(tag => { if (tag) tagSuggestions.innerHTML += `<option value="${tag}"></option>`; });
     };
 
+    // --- Authentication & Session ---
+    const saveSession = (data) => {
+        currentUser = { token: data.token, name: data.user.name, id: data.user.id };
+        localStorage.setItem('bookwiseUser', JSON.stringify(currentUser));
+        updateUIForAuthState();
+        const modalInstance = bootstrap.Modal.getInstance(document.getElementById('login-modal'));
+        modalInstance.hide();
+    };
+
+    const clearSession = () => {
+        currentUser = null;
+        localStorage.removeItem('bookwiseUser');
+        updateUIForAuthState();
+    };
+
+    const updateUIForAuthState = () => {
+        const userActions = document.getElementById('user-actions');
+        if (currentUser) {
+            userActions.innerHTML = `
+                <span class="navbar-text me-3">Welcome, ${currentUser.name}</span>
+                <button id="logout-button" class="btn btn-outline-primary">Logout</button>
+            `;
+        } else {
+            userActions.innerHTML = '<button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#login-modal">Login</button>';
+        }
+    };
+
+    const checkSession = () => {
+        const savedUser = localStorage.getItem('bookwiseUser');
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+            updateUIForAuthState();
+        }
+    };
+
     // --- Event Listeners ---
     bookGrid.addEventListener('click', (e) => {
         const card = e.target.closest('.book-card');
@@ -185,11 +241,47 @@ document.addEventListener('DOMContentLoaded', () => {
             apiFetch(`/api/v1/tags/${encodeURIComponent(tag)}`).then(renderSearchResults);
         }
     });
+
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        const loginErrorDiv = document.getElementById('login-error');
+
+        apiPost('/api/v1/authentication/login', { email, password })
+            .then(saveSession)
+            .catch(err => {
+                if (loginErrorDiv) {
+                    loginErrorDiv.textContent = 'Invalid username or password.';
+                    loginErrorDiv.style.display = 'block';
+                }
+                console.error('Login failed:', err);
+            });
+    });
+
+    document.getElementById('register-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('register-name').value;
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+        const password_confirmation = document.getElementById('register-password-confirmation').value;
+        const userData = { user: { name, email, password, password_confirmation } };
+        apiPost('/api/v1/users', userData)
+            .then(saveSession)
+            .catch(err => console.error('Registration failed'));
+    });
+
+    document.getElementById('user-actions').addEventListener('click', (e) => {
+        if (e.target.id === 'logout-button') {
+            clearSession();
+        }
+    });
     
     genreFilter.addEventListener('change', () => searchForm.dispatchEvent(new Event('submit')));
 
     // --- Initial Load ---
     const init = () => {
+        checkSession();
         apiFetch('/api/v1/homepage_feed').then(renderHomepageFeed);
         apiFetch('/api/v1/genres').then(populateGenreFilter);
         apiFetch('/api/v1/all_tags').then(populateTagSuggestions);

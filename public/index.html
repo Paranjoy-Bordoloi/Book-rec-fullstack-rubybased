@@ -14,25 +14,38 @@
 <body>
     <header class="bg-light border-bottom p-3 mb-4">
         <div class="container-fluid">
-            <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
-                <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-dark text-decoration-none fs-4 me-4">
-                    <strong>Bookwise</strong>
-                </a>
+            <div class="row align-items-center">
+                <div class="col-lg-2 col-md-3 mb-2 mb-lg-0">
+                    <a href="/" class="d-flex align-items-center text-dark text-decoration-none fs-4">
+                        <strong>Bookwise</strong>
+                    </a>
+                </div>
 
-                <form id="search-form" class="w-50 me-lg-auto">
-                    <div class="input-group">
-                        <input type="search" id="search-input" class="form-control" placeholder="Search by title, author...">
-                        <select id="genre-filter" class="form-select" style="max-width: 150px;">
-                            <option value="">All Genres</option>
-                        </select>
-                        <button class="btn btn-primary" type="submit">Search</button>
+                <div class="col-lg-5 col-md-9 mb-2 mb-lg-0">
+                    <form id="search-form">
+                        <div class="input-group">
+                            <input type="search" id="search-input" class="form-control" placeholder="Search by title, author...">
+                            <select id="genre-filter" class="form-select" style="max-width: 150px;">
+                                <option value="">All Genres</option>
+                            </select>
+                            <button class="btn btn-primary" type="submit">Search</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="col-lg-3 col-md-8 mt-2 mt-md-0 mb-2 mb-lg-0">
+                    <form id="tag-search-form">
+                        <input class="form-control" list="tag-suggestions" id="tag-search-input" placeholder="Search by mood or tag...">
+                        <datalist id="tag-suggestions"></datalist>
+                    </form>
+                </div>
+
+                <div class="col-lg-2 col-md-4 d-flex justify-content-end mt-2 mt-md-0">
+                    <div id="reading-lists-container"></div>
+                    <div id="user-actions">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#login-modal">Login</button>
                     </div>
-                </form>
-
-                <form id="tag-search-form" class="w-25 ms-4">
-                    <input class="form-control" list="tag-suggestions" id="tag-search-input" placeholder="Search by mood or tag...">
-                    <datalist id="tag-suggestions"></datalist>
-                </form>
+                </div>
             </div>
         </div>
     </header>
@@ -41,6 +54,64 @@
         <div class="book-grid"></div>
         <div id="book-detail-view" style="display: none;"></div>
     </main>
+
+    <div class="modal fade" id="login-modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Login or Register</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-pills nav-fill mb-3">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#login-form-container">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#register-form-container">Register</a>
+                        </li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="login-form-container">
+                            <form id="login-form">
+                                <div class="mb-3">
+                                    <label for="login-email" class="form-label">Email address</label>
+                                    <input type="email" class="form-control" id="login-email" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="login-password" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="login-password" required>
+                                </div>
+                                <div id="login-error" class="alert alert-danger" style="display: none;"></div>
+                                <button type="submit" class="btn btn-primary">Login</button>
+                            </form>
+                        </div>
+                        <div class="tab-pane fade" id="register-form-container">
+                            <form id="register-form">
+                                <div class="mb-3">
+                                    <label for="register-name" class="form-label">Name</label>
+                                    <input type="text" class="form-control" id="register-name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="register-email" class="form-label">Email address</label>
+                                    <input type="email" class="form-control" id="register-email" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="register-password" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="register-password" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="register-password-confirmation" class="form-label">Confirm Password</label>
+                                    <input type="password" class="form-control" id="register-password-confirmation" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Register</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>

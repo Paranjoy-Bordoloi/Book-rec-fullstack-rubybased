@@ -23,6 +23,9 @@ gem "httparty"
 gem "certified"
 gem "bootsnap", require: false
 gem "tzinfo-data", platforms: %i[ windows jruby ]
+gem "bcrypt", "~> 3.1.7"
+gem "jwt"
+gem "jsonapi-serializer"
 
 group :development, :test do
   gem "dotenv-rails"

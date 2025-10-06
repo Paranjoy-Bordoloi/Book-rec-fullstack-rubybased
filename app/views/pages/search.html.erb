@@ -1,0 +1,10 @@
+<div data-controller="book-search">
+  <h1>Book Search</h1>
+
+  <form data-action="submit->book-search#search">
+    <input type="text" data-book-search-target="query">
+    <button type="submit">Search</button>
+  </form>
+
+  <div data-book-search-target="results"></div>
+</div>
